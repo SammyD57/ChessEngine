@@ -13,21 +13,34 @@ namespace ChessEngine
         bishop = 2,
         rook = 3,
         queen = 4,
-        king = 5
+        king = 5,
+        blank
     }
-    public enum Colour
+    public enum PieceColour
     {
         white,
-        black
+        black,
+        blank
     }
     public class Piece
     {
         public PieceType Type { get; }
-        public Colour Colour { get; }
-        public Piece(PieceType type, Colour colour)
+        public PieceColour Colour { get; }
+        public Piece(PieceType type, PieceColour colour)
         {
             Type = type;
             Colour = colour;
+        }
+        public bool isWhite()
+        {
+            if (this.Colour == PieceColour.white)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
