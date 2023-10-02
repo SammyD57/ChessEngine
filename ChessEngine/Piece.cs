@@ -8,12 +8,12 @@ namespace ChessEngine
 {
     public enum PieceType
     {
-        pawn = 0,
-        knight = 1,
-        bishop = 2,
-        rook = 3,
-        queen = 4,
-        king = 5,
+        pawn,
+        knight,
+        bishop,
+        rook,
+        queen,
+        king,
         blank
     }
     public enum PieceColour

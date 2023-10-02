@@ -1,7 +1,4 @@
 ﻿
-
-//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-
 namespace ChessEngine
 {
     public class Board
@@ -18,19 +15,44 @@ namespace ChessEngine
             "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
             "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
         };
+        Dictionary<char, PieceType> piecesDict = new Dictionary<char, PieceType>
+        {
+            {'p', PieceType.pawn },
+            {'n', PieceType.knight },
+            {'b', PieceType.bishop },
+            {'r', PieceType.rook },
+            {'q', PieceType.queen },
+            {'k', PieceType.king }
+        };
+        public void printBoard()
+        {
+            string board = "";
+            for (int i = 1; i <= 64; i ++) 
+            {
+                Piece currentPiece = boardMap[squares[i - 1]];
+                if (currentPiece.Type == PieceType.blank)
+                {
+                    board += "| - ";
+                }
+                else if(currentPiece.Colour == PieceColour.white)
+                {
+                    board += "| " + piecesDict.FirstOrDefault(x => x.Value == currentPiece.Type).Key.ToString().ToUpper() + " ";
+                }
+                else
+                {
+                    board += "| " + piecesDict.FirstOrDefault(x => x.Value == currentPiece.Type).Key.ToString() + " ";
+                }           
+                if(i % 8 == 0)
+                {
+                    board += "|\n---------------------------------\n";
+                }             
+            }
+            Console.Write(board);
+        }
 
         public void addFenToBoard(string fen)
         {
-            Dictionary<char, PieceType> piecesDict = new Dictionary<char, PieceType>
-            {
-                {'p', PieceType.pawn },
-                {'n', PieceType.knight },
-                {'b', PieceType.bishop },
-                {'r', PieceType.rook },
-                {'q', PieceType.queen },
-                {'k', PieceType.king }
-            };
-
+            
             char[] fenChars = fen.ToCharArray();
             int squareIndex = 0;
 
@@ -60,7 +82,7 @@ namespace ChessEngine
         }
         public void setStartingPosition()
         {
-            this.addFenToBoard("rnbqkbnr/pppppppp/8/8/7/8/PPPPPPPP/RNBQKBNR");
+            this.addFenToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
         }
     }
 }
