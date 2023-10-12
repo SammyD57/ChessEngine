@@ -1,14 +1,16 @@
-﻿using ChessEngine;
+﻿
+using ChessEngine;
 
 
 Board board = new Board();
 board.setStartingPosition();
 
-/*
-foreach (var kvp in board.boardMap)
-{   
-    Console.WriteLine("Square = {0}, Type = {1}, Colour = {2}", kvp.Key, kvp.Value.Type, kvp.Value.Colour);
+var nMoves = board.generateLegalKnightMoves();
+foreach (var move in nMoves)
+{
+    Console.WriteLine(move.startSquare + move.targetSquare);
 }
-*/
 
-board.printBoard();
+
+//var test = board.isLegalChangeInPosition(-1, 2, "b1");
+//Console.WriteLine(test);

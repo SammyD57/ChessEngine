@@ -26,21 +26,11 @@ namespace ChessEngine
     {
         public PieceType Type { get; }
         public PieceColour Colour { get; }
+        public int numMovesMade = 0;
         public Piece(PieceType type, PieceColour colour)
         {
             Type = type;
             Colour = colour;
-        }
-        public bool isWhite()
-        {
-            if (this.Colour == PieceColour.white)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
         }
     }
 }

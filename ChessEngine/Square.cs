@@ -6,20 +6,32 @@ using System.Threading.Tasks;
 
 namespace ChessEngine
 {
-    public enum SquareColour
-    {
-        light,
-        dark
-    }
-
-
-
-    public class Square
-    {
-        public SquareColour Colour { get; }
-        public Square(SquareColour colour)
+    public static class Square
+    {      
+        public static bool isWhite(string name)
         {
-            Colour = colour;
+            int rank = int.Parse(name.Substring(1, 1));
+            char file = char.Parse(name.Substring(0, 1));
+            if(rank % 2 == 0 && getFileAsInt(file) % 2 == 0)
+            {
+                return false;
+            }
+            else if(rank % 2 == 1 && getFileAsInt(file) % 2 == 1)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        public static int getFileAsInt(char f)
+        {
+            return (int) f - 96;
+        }
+        public static char getIntAsFile(int f)
+        {
+            return Convert.ToChar(f + 96);
         }
     }
 }
