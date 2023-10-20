@@ -9,7 +9,7 @@ namespace ChessEngine
         public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
 
 
-        public string[] squares = new string[]
+        public string[] allSquares = new string[]
         {
             "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
             "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
@@ -30,6 +30,13 @@ namespace ChessEngine
             {'k', PieceType.king }
         };
 
+        private readonly int[] diagonalXDeltas = { 1, 1, -1, -1 };
+        private readonly int[] diagonalYDeltas = { 1, -1, -1, 1 };
+
+        private readonly int[] knightXDeltas = { 1, 2, 2, 1, -1, -2, -2, -1 };
+        private readonly int[] knightYDeltas = { 2, 1, -1, -2, -2, -1, 1, 2 };
+
+
         public void makeMove(Move move)
         {
             boardMap[move.targetSquare] = boardMap[move.startSquare];
@@ -43,7 +50,7 @@ namespace ChessEngine
             string board = "";
             for (int i = 1; i <= 64; i++)
             {
-                Piece currentPiece = boardMap[squares[i - 1]];
+                Piece currentPiece = boardMap[allSquares[i - 1]];
                 if (currentPiece.Type == PieceType.blank)
                 {
                     board += "| - ";
@@ -78,18 +85,18 @@ namespace ChessEngine
                 {
                     for (int j = 0; j < Char.GetNumericValue(c); j++)
                     {
-                        boardMap.Add(squares[squareIndex + j], new Piece(PieceType.blank, PieceColour.blank));
+                        boardMap.Add(allSquares[squareIndex + j], new Piece(PieceType.blank, PieceColour.blank));
                     }
                     squareIndex += (int)Char.GetNumericValue(c);
                 }
                 else if (Char.IsUpper(c))
                 {
-                    boardMap.Add(squares[squareIndex], new Piece(piecesDict[Char.ToLower(c)], PieceColour.white));
+                    boardMap.Add(allSquares[squareIndex], new Piece(piecesDict[Char.ToLower(c)], PieceColour.white));
                     squareIndex++;
                 }
                 else if (Char.IsLower(c))
                 {
-                    boardMap.Add(squares[squareIndex], new Piece(piecesDict[c], PieceColour.black));
+                    boardMap.Add(allSquares[squareIndex], new Piece(piecesDict[c], PieceColour.black));
                     squareIndex++;
                 }
             }
@@ -137,25 +144,6 @@ namespace ChessEngine
             return squares.ToArray();
         }
 
-        /*
-        public Move[] generateLegalPawnMoves() //1 space, 2 spaces, EnPassant, Promotion NBRQ
-        {
-            Move[] moves;
-            Piece[] pieces;
-            if (isWhiteToMove())
-            {
-                pieces = getArrayOfPieces(PieceColour.white, PieceType.pawn);
-            }
-            else
-            {
-                pieces = getArrayOfPieces(PieceColour.black, PieceType.pawn);
-            }
-
-
-            return moves;
-        }
-        */
-
         public string[] getSquaresContainingPiece(PieceType type, PieceColour colour)
         {
             List<string> squares = new List<string>();
@@ -170,25 +158,17 @@ namespace ChessEngine
         }
         public Move[] generateLegalKnightMoves()
         {
-            List<Move> moves = new List<Move>();
-           
-            PieceColour knightColour = PieceColour.black;
-            if (isWhiteToMove())
-            {
-                knightColour = PieceColour.white;
-            }
-            string[] squaresWithKnights = getSquaresContainingPiece(PieceType.knight, knightColour);
-
-            int[] xDeltas = { 1, 2, 2, 1, -1, -2, -2, -1 };
-            int[] yDeltas = { 2, 1, -1, -2, -2, -1, 1, 2 };      
+            List<Move> moves = new List<Move>();          
+            PieceColour knightColour = (isWhiteToMove()) ? PieceColour.white : PieceColour.black;           
+            string[] squaresWithKnights = getSquaresContainingPiece(PieceType.knight, knightColour);    
 
             foreach (string square in squaresWithKnights)
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    if (isLegalChangeInPosition(xDeltas[i], yDeltas[i], square))
+                    if (changeIsWithinBoard(knightXDeltas[i], knightYDeltas[i], square))
                     {
-                        string newSquare = offsetCoordinate(xDeltas[i], yDeltas[i], square);
+                        string newSquare = Square.offsetCoordinate(knightXDeltas[i], knightYDeltas[i], square);
                         if (boardMap[newSquare].Colour != knightColour)
                         {
                             moves.Add(new Move(square + newSquare, this));
@@ -198,17 +178,30 @@ namespace ChessEngine
             }
             return moves.ToArray();
         }
-        public string offsetCoordinate(int deltaX, int deltaY, string startingSquare)
+
+        public Move[] generateLegalBishopMoves()
         {
-            string newCoordinate;
-            int rank = int.Parse(startingSquare.Substring(1, 1));
-            int file = Square.getFileAsInt(Char.Parse(startingSquare.Substring(0, 1)));
-            rank += deltaY;
-            file += deltaX;
-            newCoordinate = Square.getIntAsFile(file).ToString() + rank.ToString();
-            return newCoordinate;
+            List<Move> moves = new List<Move>();
+            PieceColour bishopColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            string[] squaresWithBishops = getSquaresContainingPiece(PieceType.bishop, bishopColour);
+
+            foreach(string square in squaresWithBishops)
+            {
+                int[] maximumDiagonals = getMaximumDiagonalOffsets(square, bishopColour);
+                for (int i = 0; i < 4; i++)
+                {
+                    for(int j = 1; j <= maximumDiagonals[i]; j++)
+                    {
+                        string targetSquare = Square.offsetCoordinate(diagonalXDeltas[i] * j, diagonalYDeltas[i] * j , square);
+                        moves.Add(new Move(square + targetSquare, this));
+                    }           
+                }
+            }
+
+            return moves.ToArray();
         }
-        public bool isLegalChangeInPosition(int deltaX, int deltaY, string startingSquare)
+        
+        public bool changeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
         {
             int startingRank = int.Parse(startingSquare.Substring(1, 1));
             int startingFile = Square.getFileAsInt(Char.Parse(startingSquare.Substring(0, 1)));
@@ -221,6 +214,46 @@ namespace ChessEngine
             {
                 return false;
             }
+        }
+        public int[] getMaximumDiagonalOffsets(string startingSquare, PieceColour colour)
+        {
+            int[] maximums = new int[4];
+            
+            for(int i = 0; i < 4; i++)
+            {
+                string previousSquare = startingSquare;
+                int max = 0;
+                bool isLegal = true;
+                while(isLegal)
+                {
+                    if (changeIsWithinBoard(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare))
+                    {
+                        string currentSquare = Square.offsetCoordinate(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare);
+                        if (boardMap[currentSquare].Colour == colour)
+                        {
+                            isLegal = false;
+                        }
+                        else if (boardMap[currentSquare].Colour == PieceColour.blank)
+                        {
+                            max++;
+                        }
+                        else
+                        {
+                            max++;
+                            isLegal = false;
+                        }
+                        previousSquare = currentSquare;
+                    }
+                    else
+                    {
+                        isLegal = false;
+                    }
+                    
+                }
+                maximums[i] = max;
+                
+            }          
+            return maximums;          
         }
     }
 }

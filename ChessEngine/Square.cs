@@ -33,5 +33,20 @@ namespace ChessEngine
         {
             return Convert.ToChar(f + 96);
         }
+        public static string squareFromInts(int rank, int file)
+        {
+            string square = getIntAsFile(file).ToString() + rank.ToString();
+            return square;
+        }
+        public static string offsetCoordinate(int deltaX, int deltaY, string startingSquare)
+        {
+            string newCoordinate;
+            int rank = int.Parse(startingSquare.Substring(1, 1));
+            int file = Square.getFileAsInt(Char.Parse(startingSquare.Substring(0, 1)));
+            rank += deltaY;
+            file += deltaX;
+            newCoordinate = Square.getIntAsFile(file).ToString() + rank.ToString();
+            return newCoordinate;
+        }
     }
 }
