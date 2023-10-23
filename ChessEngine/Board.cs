@@ -1,13 +1,9 @@
-﻿
-using System.Drawing;
-
-namespace ChessEngine
+﻿namespace ChessEngine
 {
     public class Board
     {
         public int plyCount = 0;
         public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
-
 
         public string[] allSquares = new string[]
         {
@@ -20,6 +16,7 @@ namespace ChessEngine
             "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
             "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
         };
+
         Dictionary<char, PieceType> piecesDict = new Dictionary<char, PieceType>
         {
             {'p', PieceType.pawn },
@@ -35,6 +32,12 @@ namespace ChessEngine
 
         private readonly int[] knightXDeltas = { 1, 2, 2, 1, -1, -2, -2, -1 };
         private readonly int[] knightYDeltas = { 2, 1, -1, -2, -2, -1, 1, 2 };
+
+        private readonly int[] rookXDeltas = {1, 0, -1, 0 };
+        private readonly int[] rookYDeltas = {0, -1, 0, 1 };
+
+        private readonly int[] royalXDeltas = { 1, 1, 1, 0, -1, -1, -1, 0 };
+        private readonly int[] royalYDeltas = { 1, 0, -1, -1, -1, 0, 1, 1 };
 
 
         public void makeMove(Move move)
@@ -156,6 +159,18 @@ namespace ChessEngine
             }
             return squares.ToArray();
         }
+        
+        public Move[] generateLegalPawnMoves()
+        {
+            List<Move> moves = new List<Move>();
+            PieceColour pawnColour = (isWhiteToMove()) ? PieceColour.white : PieceColour.black;
+            string[] squaresWithPawns = getSquaresContainingPiece(PieceType.pawn, pawnColour);
+            foreach (var square in squaresWithPawns)
+            {
+
+            }
+            return moves.ToArray();
+        }
         public Move[] generateLegalKnightMoves()
         {
             List<Move> moves = new List<Move>();          
@@ -201,6 +216,48 @@ namespace ChessEngine
             return moves.ToArray();
         }
         
+        public Move[] generateLegalRookMoves()
+        {
+            List<Move> moves = new List<Move>();
+            PieceColour rookColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            string[] squaresWithRooks = getSquaresContainingPiece(PieceType.rook, rookColour);
+
+            foreach (string square in squaresWithRooks)
+            {
+                int[] maximumStraights = getMaximumStraightOffsets(square, rookColour);
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 1; j <= maximumStraights[i]; j++)
+                    {
+                        string targetSquare = Square.offsetCoordinate(rookXDeltas[i] * j, rookYDeltas[i] * j, square);
+                        moves.Add(new Move(square + targetSquare, this));
+                    }
+                }
+            }
+            return moves.ToArray();
+        }
+
+        public Move[] generateLegalQueenMoves()
+        {
+            List<Move> moves = new List<Move>();
+            PieceColour queenColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            string[] squaresWithQueen = getSquaresContainingPiece(PieceType.queen, queenColour);   
+            
+            foreach (var square in squaresWithQueen)
+            {
+                int[] queenOffsets = getCombinedStraightAndDiagonalOffsets(square, queenColour);
+                for (int i = 0; i < 8; i++)
+                {
+                    for (int j = 1; j <= queenOffsets[i]; j++)
+                    {
+                        string targetSquare = Square.offsetCoordinate(royalXDeltas[i] * j, royalYDeltas[i] * j, square);
+                        moves.Add(new Move(square + targetSquare, this));
+                    }
+                }
+            }
+            return moves.ToArray(); 
+        }
+
         public bool changeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
         {
             int startingRank = int.Parse(startingSquare.Substring(1, 1));
@@ -254,6 +311,57 @@ namespace ChessEngine
                 
             }          
             return maximums;          
+        }
+        public int[] getMaximumStraightOffsets(string startingSquare, PieceColour colour)
+        {
+            int[] maximums = new int[4];
+            for(int i = 0; i < 4; i++)
+            {
+                string previousSquare = startingSquare;
+                int max = 0;
+                bool isLegal = true;
+                while (isLegal)
+                {
+                    if (changeIsWithinBoard(rookXDeltas[i], rookYDeltas[i], previousSquare))
+                    {
+                        string currentSquare = Square.offsetCoordinate(rookXDeltas[i], rookYDeltas[i], previousSquare);
+                        if (boardMap[currentSquare].Colour == colour)
+                        {
+                            isLegal = false;
+                        }
+                        else if (boardMap[currentSquare].Colour == PieceColour.blank)
+                        {
+                            max++;
+                        }
+                        else
+                        {
+                            max++;
+                            isLegal = false;
+                        }
+                        previousSquare = currentSquare;
+                    }
+                    else
+                    {
+                        isLegal = false;
+                    }
+                }
+                maximums[i] = max;
+            }
+            return maximums;
+        }
+
+        public int[] getCombinedStraightAndDiagonalOffsets(string startingSquare, PieceColour colour)
+        {
+            List<int> maximums = new List<int>();
+            int[] diagonals = getMaximumDiagonalOffsets(startingSquare, colour);
+            int[] straights = getMaximumStraightOffsets(startingSquare, colour);
+
+            for(int i = 0; i < 4; i++)
+            {
+                maximums.Add(diagonals[i]);
+                maximums.Add(straights[i]);
+            }
+            return maximums.ToArray();
         }
     }
 }

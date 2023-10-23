@@ -1,16 +1,17 @@
 ﻿using ChessEngine;
-
+using System.Drawing;
 
 Board board = new Board();
-board.addFenToBoard("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR");
+board.setStartingPosition();
+
 
 
 
 while (true)
 {
     board.printBoard();
-    var bMoves = board.generateLegalBishopMoves();
-    foreach (var move in bMoves)
+    var qMoves = board.generateLegalQueenMoves();
+    foreach (var move in qMoves)
     {
         Console.WriteLine(move.startSquare + move.targetSquare);
     }
