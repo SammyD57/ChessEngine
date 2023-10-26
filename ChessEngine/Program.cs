@@ -5,13 +5,11 @@ Board board = new Board();
 board.setStartingPosition();
 
 
-
-
 while (true)
 {
     board.printBoard();
-    var qMoves = board.generateLegalQueenMoves();
-    foreach (var move in qMoves)
+    var pMoves = board.generateLegalPawnMoves();
+    foreach (var move in pMoves)
     {
         Console.WriteLine(move.startSquare + move.targetSquare);
     }

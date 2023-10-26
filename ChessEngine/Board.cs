@@ -4,6 +4,7 @@
     {
         public int plyCount = 0;
         public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
+        public string enPassantSquare;
 
         public string[] allSquares = new string[]
         {
@@ -17,7 +18,7 @@
             "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
         };
 
-        Dictionary<char, PieceType> piecesDict = new Dictionary<char, PieceType>
+        public Dictionary<char, PieceType> piecesDict = new Dictionary<char, PieceType>
         {
             {'p', PieceType.pawn },
             {'n', PieceType.knight },
@@ -26,6 +27,8 @@
             {'q', PieceType.queen },
             {'k', PieceType.king }
         };
+
+        public char[] promotionPieces = { 'n', 'b', 'r', 'q' };
 
         private readonly int[] diagonalXDeltas = { 1, 1, -1, -1 };
         private readonly int[] diagonalYDeltas = { 1, -1, -1, 1 };
@@ -164,13 +167,56 @@
         {
             List<Move> moves = new List<Move>();
             PieceColour pawnColour = (isWhiteToMove()) ? PieceColour.white : PieceColour.black;
+            int yChange = (isWhiteToMove() ? 1 : -1);
             string[] squaresWithPawns = getSquaresContainingPiece(PieceType.pawn, pawnColour);
-            foreach (var square in squaresWithPawns)
-            {
 
+            foreach (var square in squaresWithPawns)
+            {                
+                if (changeIsWithinBoard(0 , yChange, square) && boardMap[Square.offsetCoordinate(0 , yChange, square)].Type == PieceType.blank)
+                {
+                    string targetSquare = Square.offsetCoordinate(0, yChange, square);
+                    int rank = int.Parse(targetSquare.Substring(1, 1));
+                    //promotion white
+                    if (rank == 8)
+                    {
+                        foreach(char promotionPiece in promotionPieces)
+                        {
+                            moves.Add(new Move(square + targetSquare + "=" + Char.ToUpper(promotionPiece), this));
+                        }
+                    }
+                    //promotion black
+                    else if (rank == 1)
+                    {
+                        foreach (char promotionPiece in promotionPieces)
+                        {
+                            moves.Add(new Move(square + targetSquare + "=" + promotionPiece, this));
+                        }
+                    }
+                    //Move 2 squares
+                    else if (boardMap[square].numMovesMade == 0 && boardMap[Square.offsetCoordinate(0, yChange * 2, square)].Type == PieceType.blank)
+                    {
+                        targetSquare = Square.offsetCoordinate(0, yChange * 2, square);
+                        moves.Add(new Move(square + targetSquare, this));
+                    }
+                    //Move 1 square
+                    else
+                    {
+                        moves.Add(new Move(square + targetSquare, this));
+                    }
+                }
+                //Captures
+                for(int i = -1; i < 2; i+=2) 
+                {
+                    if(changeIsWithinBoard(i, yChange, square) && (boardMap[Square.offsetCoordinate(i, yChange, square)].Type != PieceType.blank || Square.offsetCoordinate(i, yChange, square) == enPassantSquare))
+                    {
+                        string targetSquare = Square.offsetCoordinate(i, yChange, square);
+                        moves.Add(new Move(square + targetSquare, this));
+                    }
+                }
             }
             return moves.ToArray();
         }
+
         public Move[] generateLegalKnightMoves()
         {
             List<Move> moves = new List<Move>();          
