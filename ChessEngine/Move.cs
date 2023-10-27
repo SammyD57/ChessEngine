@@ -11,21 +11,53 @@ namespace ChessEngine
 
         public string startSquare;
         public string targetSquare;
+        public string coordinateNotation;
         public Piece pieceToMove;
-        public bool isPromotion;
         public PieceType promotionPiece;
 
         public Move(string coordNotation, Board board)
         {
+            coordinateNotation = coordNotation;
             startSquare = coordNotation.Substring(0, 2);
             targetSquare = coordNotation.Substring(2, 2);
-            pieceToMove = board.boardMap[startSquare];
-            if(coordNotation.Length > 4)
+            pieceToMove = board.boardMap[startSquare];                                
+        }
+        public bool isEnPassant(Board board)
+        {
+           if (pieceToMove.Type == PieceType.pawn && board.boardMap[targetSquare].Type == PieceType.blank)
+           {
+                return true;
+           }
+           else
+           {
+                return false;
+           }
+        }
+        public bool isPromotionMove()
+        {
+            if (coordinateNotation.Contains('='))
             {
-                isPromotion = true;
-                promotionPiece = board.piecesDict[Char.Parse(coordNotation.Substring(5, 1))];
-                
-            }          
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public bool isDoublePawnMove()
+        {
+            if (MathF.Abs(Square.getRank(targetSquare) - Square.getRank(startSquare)) == 2)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public PieceType getPromotionPiece(Board board)
+        {
+           return board.piecesDict[Char.ToLower(Char.Parse(this.coordinateNotation.Substring(5, 1)))];
         }
     }
 }

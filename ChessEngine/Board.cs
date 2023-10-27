@@ -4,7 +4,7 @@
     {
         public int plyCount = 0;
         public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
-        public string enPassantSquare;
+        public string? enPassantSquare;
 
         public string[] allSquares = new string[]
         {
@@ -49,6 +49,13 @@
             boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
             move.pieceToMove.numMovesMade++;
             plyCount++;
+
+            //Can't tell if enPassant is legal from fen string
+            if (move.isDoublePawnMove())
+            {
+                int yOffset = move.pieceToMove.Colour == PieceColour.white ? 1 : -1;
+                enPassantSquare = Square.offsetCoordinate(0, yOffset, move.startSquare);                
+            }
         }
 
         public void printBoard()
@@ -192,19 +199,20 @@
                             moves.Add(new Move(square + targetSquare + "=" + promotionPiece, this));
                         }
                     }
-                    //Move 2 squares
-                    else if (boardMap[square].numMovesMade == 0 && boardMap[Square.offsetCoordinate(0, yChange * 2, square)].Type == PieceType.blank)
-                    {
-                        targetSquare = Square.offsetCoordinate(0, yChange * 2, square);
-                        moves.Add(new Move(square + targetSquare, this));
-                    }
                     //Move 1 square
                     else
                     {
                         moves.Add(new Move(square + targetSquare, this));
+                        //Move 2 squares
+                        if (boardMap[square].numMovesMade == 0 && boardMap[Square.offsetCoordinate(0, yChange * 2, square)].Type == PieceType.blank)
+                        {
+                            targetSquare = Square.offsetCoordinate(0, yChange * 2, square);
+                            moves.Add(new Move(square + targetSquare, this));
+                        }
                     }
+                    
                 }
-                //Captures
+                //Captures + EnPassant
                 for(int i = -1; i < 2; i+=2) 
                 {
                     if(changeIsWithinBoard(i, yChange, square) && (boardMap[Square.offsetCoordinate(i, yChange, square)].Type != PieceType.blank || Square.offsetCoordinate(i, yChange, square) == enPassantSquare))

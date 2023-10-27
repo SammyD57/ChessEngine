@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ChessEngine
 {
     public static class Square
     {      
-        public static bool isWhite(string name)
+        public static bool isWhite(string square)
         {
-            int rank = int.Parse(name.Substring(1, 1));
-            char file = char.Parse(name.Substring(0, 1));
+            char file = getFile(square);
+            int rank = getRank(square);
+            
             if(rank % 2 == 0 && getFileAsInt(file) % 2 == 0)
             {
                 return false;
@@ -25,6 +27,15 @@ namespace ChessEngine
                 return true;
             }
         }
+        public static char getFile(string square)
+        {
+            return char.Parse(square.Substring(0, 1));
+        }
+        public static int getRank(string square)
+        {
+            return int.Parse(square.Substring(1, 1));
+        }
+
         public static int getFileAsInt(char f)
         {
             return (int) f - 96;
