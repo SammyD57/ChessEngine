@@ -2,7 +2,7 @@
 using System.Drawing;
 
 Board board = new Board();
-board.addFenToBoard("8/3p4/8/8/4P3/8/8/8");
+board.setStartingPosition();
 
 
 while (true)

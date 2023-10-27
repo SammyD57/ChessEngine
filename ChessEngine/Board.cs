@@ -3,8 +3,13 @@
     public class Board
     {
         public int plyCount = 0;
+        public int fullMovesCount = 1;
         public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
         public string? enPassantSquare;
+        public bool isWhiteToMove = true;
+
+        public bool whiteHasKingsideCastleRight, whiteHasQueensideCastleRight, blackHasKingsideCastleRight, blackHasQueensideCastleRight;
+        public int fiftyMoveRuleCount = 0;
 
         public string[] allSquares = new string[]
         {
@@ -28,8 +33,8 @@
             {'k', PieceType.king }
         };
 
-        public char[] promotionPieces = { 'n', 'b', 'r', 'q' };
-
+        public Dictionary<string, int> attackDefendMap = new Dictionary<string, int>();
+          
         private readonly int[] diagonalXDeltas = { 1, 1, -1, -1 };
         private readonly int[] diagonalYDeltas = { 1, -1, -1, 1 };
 
@@ -42,6 +47,14 @@
         private readonly int[] royalXDeltas = { 1, 1, 1, 0, -1, -1, -1, 0 };
         private readonly int[] royalYDeltas = { 1, 0, -1, -1, -1, 0, 1, 1 };
 
+        public Board()
+        {
+            foreach(string square in allSquares)
+            {
+                attackDefendMap.Add(square, 0);
+            }
+
+        }
 
         public void makeMove(Move move)
         {
@@ -49,6 +62,7 @@
             boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
             move.pieceToMove.numMovesMade++;
             plyCount++;
+            isWhiteToMove = !isWhiteToMove;
 
             //Can't tell if enPassant is legal from fen string
             if (move.isDoublePawnMove())
@@ -86,13 +100,13 @@
 
         public void addFenToBoard(string fen)
         {
-
-            char[] fenChars = fen.ToCharArray();
+            string[] fenSections = fen.Split(" ");
+            char[] fenPieces = fenSections[0].ToCharArray();
             int squareIndex = 0;
 
-            for (int i = 0; i < fenChars.Length; i++)
+            for (int i = 0; i < fenPieces.Length; i++)
             {
-                char c = fenChars[i];
+                char c = fenPieces[i];
 
                 if (Char.IsDigit(c))
                 {
@@ -113,23 +127,49 @@
                     squareIndex++;
                 }
             }
-        }
-        public void setStartingPosition()
-        {
-            addFenToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-        }
 
-        public bool isWhiteToMove()
-        {
-            if (plyCount % 2 == 0)
+            string activeColour = fenSections[1];
+            if(activeColour == "w")
             {
-                return true;
+                isWhiteToMove = true;
             }
             else
             {
-                return false;
+                isWhiteToMove = false;
             }
+
+            char[] castlingRights = fenSections[2].ToCharArray();
+            foreach (char c in castlingRights)
+            {
+                switch (c)
+                {
+                    case 'K':
+                        whiteHasKingsideCastleRight = true; 
+                        break;
+                    case 'Q':
+                        whiteHasQueensideCastleRight = true;
+                        break;
+                    case 'k':
+                        blackHasKingsideCastleRight = true;
+                        break;
+                    case 'q':
+                        blackHasQueensideCastleRight = true;
+                        break; 
+                }
+            }
+
+            if (fenSections[3] != "-")
+            {
+                enPassantSquare = fenSections[3];
+            }
+            fiftyMoveRuleCount = int.Parse(fenSections[4]);
+            fullMovesCount = int.Parse(fenSections[5]);
         }
+        public void setStartingPosition()
+        {
+            addFenToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        }
+
         public Piece[] getArrayOfPieces(PieceColour colour, PieceType type)
         {
             List<Piece> pieces = new List<Piece>();
@@ -173,9 +213,10 @@
         public Move[] generateLegalPawnMoves()
         {
             List<Move> moves = new List<Move>();
-            PieceColour pawnColour = (isWhiteToMove()) ? PieceColour.white : PieceColour.black;
-            int yChange = (isWhiteToMove() ? 1 : -1);
+            PieceColour pawnColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;
+            int yChange = (isWhiteToMove ? 1 : -1);
             string[] squaresWithPawns = getSquaresContainingPiece(PieceType.pawn, pawnColour);
+            char[] promotionPieces = { 'n', 'b', 'r', 'q' };
 
             foreach (var square in squaresWithPawns)
             {                
@@ -228,7 +269,7 @@
         public Move[] generateLegalKnightMoves()
         {
             List<Move> moves = new List<Move>();          
-            PieceColour knightColour = (isWhiteToMove()) ? PieceColour.white : PieceColour.black;           
+            PieceColour knightColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;           
             string[] squaresWithKnights = getSquaresContainingPiece(PieceType.knight, knightColour);    
 
             foreach (string square in squaresWithKnights)
@@ -251,7 +292,7 @@
         public Move[] generateLegalBishopMoves()
         {
             List<Move> moves = new List<Move>();
-            PieceColour bishopColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            PieceColour bishopColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
             string[] squaresWithBishops = getSquaresContainingPiece(PieceType.bishop, bishopColour);
 
             foreach(string square in squaresWithBishops)
@@ -273,7 +314,7 @@
         public Move[] generateLegalRookMoves()
         {
             List<Move> moves = new List<Move>();
-            PieceColour rookColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            PieceColour rookColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
             string[] squaresWithRooks = getSquaresContainingPiece(PieceType.rook, rookColour);
 
             foreach (string square in squaresWithRooks)
@@ -294,7 +335,7 @@
         public Move[] generateLegalQueenMoves()
         {
             List<Move> moves = new List<Move>();
-            PieceColour queenColour = isWhiteToMove() ? PieceColour.white : PieceColour.black;
+            PieceColour queenColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
             string[] squaresWithQueen = getSquaresContainingPiece(PieceType.queen, queenColour);   
             
             foreach (var square in squaresWithQueen)
