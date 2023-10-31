@@ -44,6 +44,10 @@ namespace ChessEngine
                 return false;
             }
         }
+        public PieceType getPromotionPiece(Board board)
+        {
+           return board.piecesDict[Char.ToLower(Char.Parse(this.coordinateNotation.Substring(5, 1)))];
+        }
         public bool isDoublePawnMove()
         {
             if (MathF.Abs(Square.getRank(targetSquare) - Square.getRank(startSquare)) == 2)
@@ -55,9 +59,16 @@ namespace ChessEngine
                 return false;
             }
         }
-        public PieceType getPromotionPiece(Board board)
+        public bool isCaptureMove(Board board)
         {
-           return board.piecesDict[Char.ToLower(Char.Parse(this.coordinateNotation.Substring(5, 1)))];
+            if (board.boardMap[targetSquare].Type != PieceType.blank)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

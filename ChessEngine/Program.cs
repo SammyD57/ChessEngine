@@ -8,10 +8,10 @@ board.setStartingPosition();
 while (true)
 {
     board.printBoard();
-    var pMoves = board.generateLegalPawnMoves();
-    foreach (var move in pMoves)
+    board.updateAttackDefendMap();
+    foreach(var kvp in board.attackDefendMap)
     {
-        Console.WriteLine(move.coordinateNotation);
+        Console.WriteLine(kvp.Key + ": " + kvp.Value);
     }
     board.makeMove(new Move(Console.ReadLine(), board));
 }
