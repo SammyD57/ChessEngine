@@ -1,4 +1,5 @@
-﻿namespace ChessEngine
+﻿using ChessEngine.Utilities;
+namespace ChessEngine
 {
     public class Board
     {
@@ -33,14 +34,7 @@
             {'k', PieceType.king }
         };
 
-        public Dictionary<PieceType, float> pieceValues = new Dictionary<PieceType, float>
-        {
-            {PieceType.pawn, 1 },
-            {PieceType.knight, 3 },
-            {PieceType.bishop, 3.25f },
-            {PieceType.rook, 5 },
-            {PieceType.queen, 9 }
-        }; 
+        public float[] pieceValues = { 1, 3, 3.25f, 5, 9 };
 
         public Dictionary<string, float> attackDefendMap = new Dictionary<string, float>();
           
@@ -65,14 +59,14 @@
 
         }
 
-        public void makeMove(Move move)
+        public void MakeMove(Move move)
         {
             boardMap[move.targetSquare] = boardMap[move.startSquare];
             boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
             move.pieceToMove.numMovesMade++;
             plyCount++;
             isWhiteToMove = !isWhiteToMove;
-            updateAttackDefendMap();
+            UpdateAttackDefendMap();
 
             if (move.isDoublePawnMove())
             {
@@ -81,7 +75,7 @@
             }
         }
 
-        public void printBoard()
+        public void PrintBoard()
         {
             string board = "";
             for (int i = 1; i <= 64; i++)
@@ -106,84 +100,17 @@
             }
             Console.Write(board + "\n");
         }
-
-        public void addFenToBoard(string fen)
+      
+        public void SetStartingPosition()
         {
-            string[] fenSections = fen.Split(" ");
-            char[] fenPieces = fenSections[0].ToCharArray();
-            int squareIndex = 0;
-
-            for (int i = 0; i < fenPieces.Length; i++)
-            {
-                char c = fenPieces[i];
-
-                if (Char.IsDigit(c))
-                {
-                    for (int j = 0; j < Char.GetNumericValue(c); j++)
-                    {
-                        boardMap.Add(allSquares[squareIndex + j], new Piece(PieceType.blank, PieceColour.blank));
-                    }
-                    squareIndex += (int)Char.GetNumericValue(c);
-                }
-                else if (Char.IsUpper(c))
-                {
-                    boardMap.Add(allSquares[squareIndex], new Piece(piecesDict[Char.ToLower(c)], PieceColour.white));
-                    squareIndex++;
-                }
-                else if (Char.IsLower(c))
-                {
-                    boardMap.Add(allSquares[squareIndex], new Piece(piecesDict[c], PieceColour.black));
-                    squareIndex++;
-                }
-            }
-
-            string activeColour = fenSections[1];
-            if(activeColour == "w")
-            {
-                isWhiteToMove = true;
-            }
-            else
-            {
-                isWhiteToMove = false;
-            }
-
-            char[] castlingRights = fenSections[2].ToCharArray();
-            foreach (char c in castlingRights)
-            {
-                switch (c)
-                {
-                    case 'K':
-                        whiteHasKingsideCastleRight = true; 
-                        break;
-                    case 'Q':
-                        whiteHasQueensideCastleRight = true;
-                        break;
-                    case 'k':
-                        blackHasKingsideCastleRight = true;
-                        break;
-                    case 'q':
-                        blackHasQueensideCastleRight = true;
-                        break; 
-                }
-            }
-
-            if (fenSections[3] != "-")
-            {
-                enPassantSquare = fenSections[3];
-            }
-            fiftyMoveRuleCount = int.Parse(fenSections[4]);
-            fullMovesCount = int.Parse(fenSections[5]);
-        }
-        public void setStartingPosition()
-        {
-            addFenToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            FenUtility.AddFen(this, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         }
 
-        public void updateAttackDefendMap()
+        public void UpdateAttackDefendMap()
         {
             int colourMultiplier = isWhiteToMove ? 1 : -1;
-            var legalMoves = generateAllLegalMoves();
-            var pawnAttackSquares = getPawnAttackSquares(false);
+            var legalMoves = GenerateAllLegalMoves();
+            var pawnAttackSquares = GetPawnAttackSquares(false);
 
             foreach(Move move in legalMoves)
             {
@@ -198,34 +125,7 @@
             }
         }
 
-        public Piece[] getArrayOfPieces(PieceColour colour, PieceType type)
-        {
-            var pieces = new List<Piece>();
-
-            foreach (var kvp in boardMap)
-            {
-                if (kvp.Value.Type == type && kvp.Value.Colour == colour)
-                {
-                    pieces.Add(kvp.Value);
-                }
-            }
-            return pieces.ToArray();
-        }
-
-        public string[] getEmptySquares()
-        {
-            var squares = new List<string>();
-            foreach (var kvp in boardMap)
-            {
-                if (kvp.Value.Type == PieceType.blank && kvp.Value.Colour == PieceColour.blank)
-                {
-                    squares.Add(kvp.Key);
-                }
-            }
-            return squares.ToArray();
-        }
-
-        public string[] getSquaresContainingPiece(PieceType type, PieceColour colour)
+        public List<string> GetSquaresContainingPiece(PieceType type, PieceColour colour)
         {
             var squares = new List<string>();
             foreach (var kvp in boardMap)
@@ -235,22 +135,22 @@
                     squares.Add(kvp.Key);
                 }
             }
-            return squares.ToArray();
+            return squares;
         }
-        public List<Move> generateAllLegalMoves()
+        public List<Move> GenerateAllLegalMoves()
         {
-            var pawnMoves = generateLegalPawnMoves();            
-            var knightMoves = generateLegalKnightMoves();
-            var bishopMoves = generateLegalBishopMoves();
-            var rookMoves = generateLegalRookMoves();
-            var queenMoves = generateLegalQueenMoves();
+            var pawnMoves = GenerateLegalPawnMoves();            
+            var knightMoves = GenerateLegalKnightMoves();
+            var bishopMoves = GenerateLegalBishopMoves();
+            var rookMoves = GenerateLegalRookMoves();
+            var queenMoves = GenerateLegalQueenMoves();
             //add King moves 
             return pawnMoves.Concat(knightMoves).Concat(bishopMoves).Concat(rookMoves).Concat(queenMoves).ToList();
         }
         
-        public List<Move> generateCaptureMoves()
+        public List<Move> GenerateCaptureMoves()
         {
-                var legalMoves = generateAllLegalMoves();
+                var legalMoves = GenerateAllLegalMoves();
                 var captureMoves = new List<Move>();
 
             foreach(Move move in legalMoves)
@@ -262,16 +162,16 @@
             }
             return captureMoves;
         }
-        public List<string> getPawnAttackSquares(bool uniqueOnly)
+        public List<string> GetPawnAttackSquares(bool uniqueOnly)
         {
             var pawnAttackSquares = new List<string>();
-            string[] pawnSquares = getSquaresContainingPiece(PieceType.pawn, isWhiteToMove ? PieceColour.white : PieceColour.black);
+            var pawnSquares = GetSquaresContainingPiece(PieceType.pawn, isWhiteToMove ? PieceColour.white : PieceColour.black);
             int yChange = (isWhiteToMove ? 1 : -1);
             foreach (string square in pawnSquares)
             {
                 for(int i = -1; i < 2; i += 2)
                 {
-                    if (changeIsWithinBoard(i, yChange, square))
+                    if (ChangeIsWithinBoard(i, yChange, square))
                     {
                         string targetSquare = Square.offsetCoordinate(i, yChange, square);
                         if (uniqueOnly && !pawnAttackSquares.Contains(targetSquare))
@@ -287,17 +187,17 @@
             }
             return pawnAttackSquares;
         }
-        public List<Move> generateLegalPawnMoves()
+        public List<Move> GenerateLegalPawnMoves()
         {
             var moves = new List<Move>();
             PieceColour pawnColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;
             int yChange = (isWhiteToMove ? 1 : -1);
-            string[] squaresWithPawns = getSquaresContainingPiece(PieceType.pawn, pawnColour);
+            var squaresWithPawns = GetSquaresContainingPiece(PieceType.pawn, pawnColour);
             char[] promotionPieces = { 'n', 'b', 'r', 'q' };
 
             foreach (var square in squaresWithPawns)
             {
-                if (changeIsWithinBoard(0, yChange, square) && boardMap[Square.offsetCoordinate(0, yChange, square)].Type == PieceType.blank)
+                if (ChangeIsWithinBoard(0, yChange, square) && boardMap[Square.offsetCoordinate(0, yChange, square)].Type == PieceType.blank)
                 {
                     string targetSquare = Square.offsetCoordinate(0, yChange, square);
                     int rank = int.Parse(targetSquare.Substring(1, 1));
@@ -333,7 +233,7 @@
                 //Captures + EnPassant
                 for (int i = -1; i < 2; i += 2)
                 {
-                    if (changeIsWithinBoard(i, yChange, square) && (boardMap[Square.offsetCoordinate(i, yChange, square)].Type != PieceType.blank || Square.offsetCoordinate(i, yChange, square) == enPassantSquare))
+                    if (ChangeIsWithinBoard(i, yChange, square) && (boardMap[Square.offsetCoordinate(i, yChange, square)].Type != PieceType.blank || Square.offsetCoordinate(i, yChange, square) == enPassantSquare))
                     {
                         string targetSquare = Square.offsetCoordinate(i, yChange, square);
                         moves.Add(new Move(square + targetSquare, this));
@@ -343,17 +243,17 @@
             return moves;
         }
 
-        public List<Move> generateLegalKnightMoves()
+        public List<Move> GenerateLegalKnightMoves()
         {
             var moves = new List<Move>();          
             PieceColour knightColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;           
-            string[] squaresWithKnights = getSquaresContainingPiece(PieceType.knight, knightColour);    
+            var squaresWithKnights = GetSquaresContainingPiece(PieceType.knight, knightColour);    
 
             foreach (string square in squaresWithKnights)
             {
                 for (int i = 0; i < 8; i++)
                 {
-                    if (changeIsWithinBoard(knightXDeltas[i], knightYDeltas[i], square))
+                    if (ChangeIsWithinBoard(knightXDeltas[i], knightYDeltas[i], square))
                     {
                         string newSquare = Square.offsetCoordinate(knightXDeltas[i], knightYDeltas[i], square);
                         if (boardMap[newSquare].Colour != knightColour)
@@ -366,15 +266,15 @@
             return moves;
         }
 
-        public List<Move> generateLegalBishopMoves()
+        public List<Move> GenerateLegalBishopMoves()
         {
             var moves = new List<Move>();
             PieceColour bishopColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
-            string[] squaresWithBishops = getSquaresContainingPiece(PieceType.bishop, bishopColour);
+            var squaresWithBishops = GetSquaresContainingPiece(PieceType.bishop, bishopColour);
 
             foreach(string square in squaresWithBishops)
             {
-                int[] maximumDiagonals = getMaximumDiagonalOffsets(square, bishopColour);
+                int[] maximumDiagonals = GetMaximumDiagonalOffsets(square, bishopColour);
                 for (int i = 0; i < 4; i++)
                 {
                     for(int j = 1; j <= maximumDiagonals[i]; j++)
@@ -388,15 +288,15 @@
             return moves;
         }
         
-        public List<Move> generateLegalRookMoves()
+        public List<Move> GenerateLegalRookMoves()
         {
             var moves = new List<Move>();
             PieceColour rookColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
-            string[] squaresWithRooks = getSquaresContainingPiece(PieceType.rook, rookColour);
+            var squaresWithRooks = GetSquaresContainingPiece(PieceType.rook, rookColour);
 
             foreach (string square in squaresWithRooks)
             {
-                int[] maximumStraights = getMaximumStraightOffsets(square, rookColour);
+                int[] maximumStraights = GetMaximumStraightOffsets(square, rookColour);
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 1; j <= maximumStraights[i]; j++)
@@ -409,15 +309,15 @@
             return moves;
         }
 
-        public List<Move> generateLegalQueenMoves()
+        public List<Move> GenerateLegalQueenMoves()
         {
             var moves = new List<Move>();
             PieceColour queenColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
-            string[] squaresWithQueen = getSquaresContainingPiece(PieceType.queen, queenColour);   
+            var squaresWithQueen = GetSquaresContainingPiece(PieceType.queen, queenColour);   
             
             foreach (var square in squaresWithQueen)
             {
-                int[] queenOffsets = getCombinedStraightAndDiagonalOffsets(square, queenColour);
+                int[] queenOffsets = GetCombinedStraightAndDiagonalOffsets(square, queenColour);
                 for (int i = 0; i < 8; i++)
                 {
                     for (int j = 1; j <= queenOffsets[i]; j++)
@@ -430,7 +330,7 @@
             return moves; 
         }
 
-        public bool changeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
+        public bool ChangeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
         {
             int startingRank = int.Parse(startingSquare.Substring(1, 1));
             int startingFile = Square.getFileAsInt(Char.Parse(startingSquare.Substring(0, 1)));
@@ -444,7 +344,7 @@
                 return false;
             }
         }
-        public int[] getMaximumDiagonalOffsets(string startingSquare, PieceColour colour)
+        public int[] GetMaximumDiagonalOffsets(string startingSquare, PieceColour colour)
         {
             int[] maximums = new int[4];
             
@@ -455,7 +355,7 @@
                 bool isLegal = true;
                 while(isLegal)
                 {
-                    if (changeIsWithinBoard(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare))
+                    if (ChangeIsWithinBoard(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare))
                     {
                         string currentSquare = Square.offsetCoordinate(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare);
                         if (boardMap[currentSquare].Colour == colour)
@@ -484,7 +384,7 @@
             }          
             return maximums;          
         }
-        public int[] getMaximumStraightOffsets(string startingSquare, PieceColour colour)
+        public int[] GetMaximumStraightOffsets(string startingSquare, PieceColour colour)
         {
             int[] maximums = new int[4];
             for(int i = 0; i < 4; i++)
@@ -494,7 +394,7 @@
                 bool isLegal = true;
                 while (isLegal)
                 {
-                    if (changeIsWithinBoard(rookXDeltas[i], rookYDeltas[i], previousSquare))
+                    if (ChangeIsWithinBoard(rookXDeltas[i], rookYDeltas[i], previousSquare))
                     {
                         string currentSquare = Square.offsetCoordinate(rookXDeltas[i], rookYDeltas[i], previousSquare);
                         if (boardMap[currentSquare].Colour == colour)
@@ -522,11 +422,11 @@
             return maximums;
         }
 
-        public int[] getCombinedStraightAndDiagonalOffsets(string startingSquare, PieceColour colour)
+        public int[] GetCombinedStraightAndDiagonalOffsets(string startingSquare, PieceColour colour)
         {
             var maximums = new List<int>();
-            int[] diagonals = getMaximumDiagonalOffsets(startingSquare, colour);
-            int[] straights = getMaximumStraightOffsets(startingSquare, colour);
+            int[] diagonals = GetMaximumDiagonalOffsets(startingSquare, colour);
+            int[] straights = GetMaximumStraightOffsets(startingSquare, colour);
 
             for(int i = 0; i < 4; i++)
             {

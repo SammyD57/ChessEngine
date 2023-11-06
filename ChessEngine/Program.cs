@@ -2,18 +2,18 @@
 using System.Drawing;
 
 Board board = new Board();
-board.setStartingPosition();
+board.SetStartingPosition();
 
 
 while (true)
 {
-    board.printBoard();
-    board.updateAttackDefendMap();
-    foreach(var kvp in board.attackDefendMap)
-    {
-        Console.WriteLine(kvp.Key + ": " + kvp.Value);
-    }
-    board.makeMove(new Move(Console.ReadLine(), board));
+    board.PrintBoard();
+    board.UpdateAttackDefendMap();
+    //foreach(var kvp in board.attackDefendMap)
+    //{
+    //    Console.WriteLine(kvp.Key + ": " + kvp.Value);
+    //}
+    board.MakeMove(new Move("e2e4", board));
 }
 
 
