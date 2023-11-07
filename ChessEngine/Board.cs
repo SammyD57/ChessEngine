@@ -61,12 +61,19 @@ namespace ChessEngine
 
         public void MakeMove(Move move)
         {
-            boardMap[move.targetSquare] = boardMap[move.startSquare];
-            boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
+            if (!move.isPromotionMove())
+            {
+                boardMap[move.targetSquare] = boardMap[move.startSquare];
+                boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
+            }
+            else
+            {
+                boardMap[move.targetSquare] = new Piece(move.promotionPiece, isWhiteToMove ? PieceColour.white: PieceColour.black);
+                boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
+            }
             move.pieceToMove.numMovesMade++;
             plyCount++;
             isWhiteToMove = !isWhiteToMove;
-            //UpdateAttackDefendMap();
 
             //Set en passant square
             if (move.isDoublePawnMove())
@@ -74,6 +81,7 @@ namespace ChessEngine
                 int yOffset = move.pieceToMove.Colour == PieceColour.white ? 1 : -1;
                 enPassantSquare = Square.offsetCoordinate(0, yOffset, move.startSquare);                
             }
+            //
         }
 
         public void PrintBoard()

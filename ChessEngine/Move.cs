@@ -20,7 +20,8 @@ namespace ChessEngine
             coordinateNotation = coordNotation;
             startSquare = coordNotation.Substring(0, 2);
             targetSquare = coordNotation.Substring(2, 2);
-            pieceToMove = board.boardMap[startSquare];                                
+            pieceToMove = board.boardMap[startSquare];
+            promotionPiece = getPromotionPiece(board);
         }
         public bool isEnPassant(Board board)
         {
