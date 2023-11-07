@@ -1,16 +1,18 @@
 ﻿using ChessEngine.Utilities;
+using System.Drawing;
+
 namespace ChessEngine
 {
     public class Board
     {
-        public int plyCount = 0;
-        public int fullMovesCount = 1;
-        public Dictionary<string, Piece> boardMap = new Dictionary<string, Piece>();
-        public string? enPassantSquare;
-        public bool isWhiteToMove = true;
+        public int plyCount { get; set; }
+        public int fullMovesCount { get; set; }
+        public int fiftyMoveRuleCount { get; set; }
+        public Dictionary<string, Piece> boardMap { get; set; }
+        public string? enPassantSquare { get; set; }
+        public bool isWhiteToMove { get; set; }
 
         public bool whiteHasKingsideCastleRight, whiteHasQueensideCastleRight, blackHasKingsideCastleRight, blackHasQueensideCastleRight;
-        public int fiftyMoveRuleCount = 0;
 
         public string[] allSquares = new string[]
         {
@@ -52,11 +54,9 @@ namespace ChessEngine
 
         public Board()
         {
-            foreach(string square in allSquares)
-            {
-                attackDefendMap.Add(square, 0);
-            }
-
+            plyCount = 0;
+            fullMovesCount = 1;
+            boardMap = new Dictionary<string, Piece>();
         }
 
         public void MakeMove(Move move)
@@ -66,8 +66,9 @@ namespace ChessEngine
             move.pieceToMove.numMovesMade++;
             plyCount++;
             isWhiteToMove = !isWhiteToMove;
-            UpdateAttackDefendMap();
+            //UpdateAttackDefendMap();
 
+            //Set en passant square
             if (move.isDoublePawnMove())
             {
                 int yOffset = move.pieceToMove.Colour == PieceColour.white ? 1 : -1;
@@ -116,7 +117,7 @@ namespace ChessEngine
             {
                 if (move.pieceToMove.Type != PieceType.pawn)
                 {
-                    attackDefendMap[move.targetSquare] += pieceValues[move.pieceToMove.Type] * colourMultiplier;
+                    attackDefendMap[move.targetSquare] += pieceValues[(int) move.pieceToMove.Type] * colourMultiplier;
                 }
             }
             foreach(string square in pawnAttackSquares)
@@ -137,6 +138,18 @@ namespace ChessEngine
             }
             return squares;
         }
+        public string GetKingSquare(PieceColour colour)
+        {
+            foreach (var kvp in boardMap)
+            {
+                if (kvp.Value.Type == PieceType.king && kvp.Value.Colour == colour)
+                {
+                    return kvp.Key;
+                }
+            }
+            return string.Empty;
+        }
+
         public List<Move> GenerateAllLegalMoves()
         {
             var pawnMoves = GenerateLegalPawnMoves();            
@@ -162,6 +175,77 @@ namespace ChessEngine
             }
             return captureMoves;
         }
+
+        public bool IsInCheck()
+        {
+            PieceColour kingColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
+            string kingSquare = GetKingSquare(kingColour);
+
+            //Knight Checks
+            for (int i = 0; i < 8; i++)
+            {
+                if (ChangeIsWithinBoard(knightXDeltas[i], knightYDeltas[i], kingSquare))
+                {
+                    string newSquare = Square.offsetCoordinate(knightXDeltas[i], knightYDeltas[i], kingSquare);
+                    if (boardMap[newSquare].Type == PieceType.knight && boardMap[newSquare].Colour != kingColour)
+                    {
+                        return true;
+                    }
+                }
+            }
+            //Rook and Queen Checks
+            for (int i = 0; i < 4; i++)
+            {
+                string previousSquare = kingSquare;
+                bool isLegal = true;
+                while (isLegal)
+                {
+                    if (ChangeIsWithinBoard(rookXDeltas[i], rookYDeltas[i], previousSquare))
+                    {
+                        string currentSquare = Square.offsetCoordinate(rookXDeltas[i], rookYDeltas[i], previousSquare);
+                        Piece pieceOnSquare = boardMap[currentSquare];
+                        if (pieceOnSquare.Colour != kingColour && (pieceOnSquare.Type == PieceType.rook || pieceOnSquare.Type == PieceType.queen))
+                        {
+                            return true;
+                        }
+                        previousSquare = currentSquare;
+                    }
+                    else { break; }
+                }
+            }
+            //Bishop and Queen Checks
+            for (int i = 0; i < 4; i++)
+            {
+                string previousSquare = kingSquare;
+                bool isLegal = true;
+                while (isLegal)
+                {
+                    if (ChangeIsWithinBoard(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare))
+                    {
+                        string currentSquare = Square.offsetCoordinate(diagonalXDeltas[i], diagonalYDeltas[i], previousSquare);
+                        Piece pieceOnSquare = boardMap[currentSquare];
+                        if (pieceOnSquare.Colour != kingColour && (pieceOnSquare.Type == PieceType.bishop || pieceOnSquare.Type == PieceType.queen))
+                        {
+                            return true;
+                        }
+                        previousSquare = currentSquare;
+                    }
+                    else { break; }
+                }
+            }
+            //Pawn Checks
+            int y = isWhiteToMove ? 1 : -1;
+            for(int x  = -1; x < 2; x += 2)
+            {
+                if (ChangeIsWithinBoard(x, y, kingSquare))
+                {
+                    Piece pieceOnSquare = boardMap[Square.offsetCoordinate(x, y, kingSquare)];
+                    if (pieceOnSquare.Type == PieceType.pawn && pieceOnSquare.Colour != kingColour) { return true; }
+                }                
+            }            
+            return false;
+        }
+
         public List<string> GetPawnAttackSquares(bool uniqueOnly)
         {
             var pawnAttackSquares = new List<string>();
