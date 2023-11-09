@@ -11,6 +11,8 @@ namespace ChessEngine
         public Dictionary<string, Piece> boardMap { get; set; }
         public string? enPassantSquare { get; set; }
         public bool isWhiteToMove { get; set; }
+        public List<Move> moveLog { get; set; }
+        public List<Board> boardStatesHistory { get; set; }
 
         public bool whiteHasKingsideCastleRight, whiteHasQueensideCastleRight, blackHasKingsideCastleRight, blackHasQueensideCastleRight;
 
@@ -56,11 +58,14 @@ namespace ChessEngine
         {
             plyCount = 0;
             fullMovesCount = 1;
-            boardMap = new Dictionary<string, Piece>();
+            boardMap = new Dictionary<string, Piece>();        
+            boardStatesHistory.Add(this);  
         }
 
         public void MakeMove(Move move)
         {
+            moveLog.Add(move);
+
             if (!move.isPromotionMove())
             {
                 boardMap[move.targetSquare] = boardMap[move.startSquare];
@@ -71,6 +76,7 @@ namespace ChessEngine
                 boardMap[move.targetSquare] = new Piece(move.promotionPiece, isWhiteToMove ? PieceColour.white: PieceColour.black);
                 boardMap[move.startSquare] = new Piece(PieceType.blank, PieceColour.blank);
             }
+
             move.pieceToMove.numMovesMade++;
             plyCount++;
             isWhiteToMove = !isWhiteToMove;
@@ -80,8 +86,16 @@ namespace ChessEngine
             {
                 int yOffset = move.pieceToMove.Colour == PieceColour.white ? 1 : -1;
                 enPassantSquare = Square.offsetCoordinate(0, yOffset, move.startSquare);                
+            }        
+            else
+            {
+                enPassantSquare = string.Empty;
             }
-            //
+        }
+        public void undoMove(int steps)
+        {
+            steps += 1;
+            this = boardStatesHistory[boardStatesHistory.Count - steps];
         }
 
         public void PrintBoard()
@@ -468,11 +482,9 @@ namespace ChessEngine
                     else
                     {
                         isLegal = false;
-                    }
-                    
+                    }         
                 }
-                maximums[i] = max;
-                
+                maximums[i] = max;      
             }          
             return maximums;          
         }
