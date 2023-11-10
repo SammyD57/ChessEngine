@@ -1,19 +1,30 @@
-﻿using ChessEngine;
-using System.Drawing;
+﻿using System.Runtime.InteropServices;
+using ChessEngine;
 
 Board board = new Board();
-board.SetStartingPosition();
 
+string[] command = Console.ReadLine().Split(" ");
 
-while (true)
+switch (command[0].ToLower())
 {
-    board.PrintBoard();
-    board.UpdateAttackDefendMap();
-    //foreach(var kvp in board.attackDefendMap)
-    //{
-    //    Console.WriteLine(kvp.Key + ": " + kvp.Value);
-    //}
-    board.MakeMove(new Move("e2e4", board));
+    case "startgame":
+    board.SetStartingPosition();
+    while (true)
+    {
+        board.PrintBoard();
+        var legalMoves = board.GenerateAllLegalMoves();
+        Move playerMove = new Move(Console.ReadLine(), board);
+        while (!legalMoves.Contains(playerMove))
+        {
+            Console.WriteLine("Illegal Move");
+            playerMove = new Move(Console.ReadLine(), board); 
+        }
+        board.MakeMove(playerMove);
+    }
+    break;
+    
+    default:
+    Console.WriteLine("Invalid Command");
+    break;
 }
-
 

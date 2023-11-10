@@ -58,13 +58,14 @@ namespace ChessEngine
         {
             plyCount = 0;
             fullMovesCount = 1;
-            boardMap = new Dictionary<string, Piece>();        
-            boardStatesHistory.Add(this);  
+            boardMap = new Dictionary<string, Piece>();          
         }
 
         public void MakeMove(Move move)
         {
+            boardStatesHistory.Add(this);
             moveLog.Add(move);
+
 
             if (!move.isPromotionMove())
             {
@@ -95,7 +96,20 @@ namespace ChessEngine
         public void undoMove(int steps)
         {
             steps += 1;
-            this = boardStatesHistory[boardStatesHistory.Count - steps];
+            Board previousBoard = boardStatesHistory[boardStatesHistory.Count - steps];
+
+            this.boardMap = previousBoard.boardMap;
+            this.plyCount = previousBoard.plyCount;
+            this.fullMovesCount = previousBoard.fullMovesCount;
+            this.fiftyMoveRuleCount = previousBoard.fiftyMoveRuleCount;
+            this.enPassantSquare = previousBoard.enPassantSquare;
+            this.isWhiteToMove = previousBoard.isWhiteToMove;
+            this.moveLog = previousBoard.moveLog;
+            this.boardStatesHistory = previousBoard.boardStatesHistory;
+            this.whiteHasKingsideCastleRight = previousBoard.whiteHasKingsideCastleRight;
+            this.whiteHasQueensideCastleRight = previousBoard.whiteHasQueensideCastleRight;
+            this.blackHasKingsideCastleRight = previousBoard.blackHasKingsideCastleRight;
+            this.blackHasQueensideCastleRight = previousBoard.blackHasQueensideCastleRight;
         }
 
         public void PrintBoard()
