@@ -74,5 +74,18 @@ namespace ChessEngine
                 return false;
             }
         }
+
+        public static bool isLegal(Board board, Move move)
+        {
+            var legalMoves = board.GenerateAllLegalMoves();
+            foreach (var legalMove in legalMoves)
+            {
+                if (legalMove.coordinateNotation == move.coordinateNotation)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

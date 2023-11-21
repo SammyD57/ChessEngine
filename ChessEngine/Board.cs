@@ -58,7 +58,9 @@ namespace ChessEngine
         {
             plyCount = 0;
             fullMovesCount = 1;
-            boardMap = new Dictionary<string, Piece>();          
+            boardMap = new Dictionary<string, Piece>();
+            moveLog = new List<Move>();
+            boardStatesHistory = new List<Board>();
         }
 
         public void MakeMove(Move move)
@@ -95,7 +97,6 @@ namespace ChessEngine
         }
         public void undoMove(int steps)
         {
-            steps += 1;
             Board previousBoard = boardStatesHistory[boardStatesHistory.Count - steps];
 
             this.boardMap = previousBoard.boardMap;
@@ -212,9 +213,8 @@ namespace ChessEngine
             return captureMoves;
         }
 
-        public bool IsInCheck()
-        {
-            PieceColour kingColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
+        public bool IsInCheck(PieceColour kingColour)
+        {           
             string kingSquare = GetKingSquare(kingColour);
 
             //Knight Checks
@@ -360,7 +360,7 @@ namespace ChessEngine
                     }
                 }
             }
-            return moves;
+            return FilterIllegalCheckMoves(moves);
         }
 
         public List<Move> GenerateLegalKnightMoves()
@@ -383,7 +383,7 @@ namespace ChessEngine
                     }
                 }          
             }
-            return moves;
+            return FilterIllegalCheckMoves(moves);
         }
 
         public List<Move> GenerateLegalBishopMoves()
@@ -405,7 +405,7 @@ namespace ChessEngine
                 }
             }
 
-            return moves;
+            return FilterIllegalCheckMoves(moves);
         }
         
         public List<Move> GenerateLegalRookMoves()
@@ -426,7 +426,7 @@ namespace ChessEngine
                     }
                 }
             }
-            return moves;
+            return FilterIllegalCheckMoves(moves);
         }
 
         public List<Move> GenerateLegalQueenMoves()
@@ -447,7 +447,23 @@ namespace ChessEngine
                     }
                 }
             }
-            return moves; 
+            return FilterIllegalCheckMoves(moves); 
+        }
+
+        public List<Move> FilterIllegalCheckMoves(List<Move> moves)
+        {
+            var filteredMoves = new List<Move>();
+            PieceColour colourToMove = isWhiteToMove ? PieceColour.white: PieceColour.black;
+            foreach (var move in moves)
+            {
+                this.MakeMove(move);
+                if (!IsInCheck(colourToMove))
+                {
+                    filteredMoves.Add(move);
+                }
+                this.undoMove(1);
+            }
+            return filteredMoves;
         }
 
         public bool ChangeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
