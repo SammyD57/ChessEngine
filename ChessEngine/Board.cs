@@ -11,6 +11,8 @@ namespace ChessEngine
         public Dictionary<string, Piece> boardMap { get; set; }
         public string? enPassantSquare { get; set; }
         public bool isWhiteToMove { get; set; }
+        public int colourMultiplier { get; set; }
+        public PieceColour colourToMove { get; set; }
         public List<Move> moveLog { get; set; }
         public List<Board> boardStatesHistory { get; set; }
 
@@ -61,6 +63,8 @@ namespace ChessEngine
             boardMap = new Dictionary<string, Piece>();
             moveLog = new List<Move>();
             boardStatesHistory = new List<Board>();
+            colourMultiplier = 1;
+            colourToMove = PieceColour.white;
         }
 
         public void MakeMove(Move move)
@@ -83,11 +87,13 @@ namespace ChessEngine
             move.pieceToMove.numMovesMade++;
             plyCount++;
             isWhiteToMove = !isWhiteToMove;
+            colourMultiplier *= -1;
+            colourToMove = isWhiteToMove ? PieceColour.white : PieceColour.black;
 
             //Set en passant square
             if (move.isDoublePawnMove())
             {
-                int yOffset = move.pieceToMove.Colour == PieceColour.white ? 1 : -1;
+                int yOffset = (move.pieceToMove.Colour == PieceColour.white) ? 1 : -1;
                 enPassantSquare = Square.offsetCoordinate(0, yOffset, move.startSquare);                
             }        
             else
@@ -112,32 +118,6 @@ namespace ChessEngine
             this.blackHasKingsideCastleRight = previousBoard.blackHasKingsideCastleRight;
             this.blackHasQueensideCastleRight = previousBoard.blackHasQueensideCastleRight;
         }
-
-        public void PrintBoard()
-        {
-            string board = "";
-            for (int i = 1; i <= 64; i++)
-            {
-                Piece currentPiece = boardMap[allSquares[i - 1]];
-                if (currentPiece.Type == PieceType.blank)
-                {
-                    board += "| - ";
-                }
-                else if (currentPiece.Colour == PieceColour.white)
-                {
-                    board += "| " + piecesDict.FirstOrDefault(p => p.Value == currentPiece.Type).Key.ToString().ToUpper() + " ";
-                }
-                else
-                {
-                    board += "| " + piecesDict.FirstOrDefault(p => p.Value == currentPiece.Type).Key.ToString() + " ";
-                }
-                if (i % 8 == 0)
-                {
-                    board += "|\n---------------------------------\n";
-                }
-            }
-            Console.Write(board + "\n");
-        }
       
         public void SetStartingPosition()
         {
@@ -146,7 +126,6 @@ namespace ChessEngine
 
         public void UpdateAttackDefendMap()
         {
-            int colourMultiplier = isWhiteToMove ? 1 : -1;
             var legalMoves = GenerateAllLegalMoves();
             var pawnAttackSquares = GetPawnAttackSquares(false);
 
@@ -270,7 +249,7 @@ namespace ChessEngine
                 }
             }
             //Pawn Checks
-            int y = isWhiteToMove ? 1 : -1;
+            int y = colourMultiplier;
             for(int x  = -1; x < 2; x += 2)
             {
                 if (ChangeIsWithinBoard(x, y, kingSquare))
@@ -286,7 +265,7 @@ namespace ChessEngine
         {
             var pawnAttackSquares = new List<string>();
             var pawnSquares = GetSquaresContainingPiece(PieceType.pawn, isWhiteToMove ? PieceColour.white : PieceColour.black);
-            int yChange = (isWhiteToMove ? 1 : -1);
+            int yChange = colourMultiplier;
             foreach (string square in pawnSquares)
             {
                 for(int i = -1; i < 2; i += 2)
@@ -310,8 +289,8 @@ namespace ChessEngine
         public List<Move> GenerateLegalPawnMoves()
         {
             var moves = new List<Move>();
-            PieceColour pawnColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;
-            int yChange = (isWhiteToMove ? 1 : -1);
+            PieceColour pawnColour = colourToMove;
+            int yChange = colourMultiplier;
             var squaresWithPawns = GetSquaresContainingPiece(PieceType.pawn, pawnColour);
             char[] promotionPieces = { 'n', 'b', 'r', 'q' };
 
@@ -366,7 +345,7 @@ namespace ChessEngine
         public List<Move> GenerateLegalKnightMoves()
         {
             var moves = new List<Move>();          
-            PieceColour knightColour = (isWhiteToMove) ? PieceColour.white : PieceColour.black;           
+            PieceColour knightColour = colourToMove;           
             var squaresWithKnights = GetSquaresContainingPiece(PieceType.knight, knightColour);    
 
             foreach (string square in squaresWithKnights)
@@ -389,7 +368,7 @@ namespace ChessEngine
         public List<Move> GenerateLegalBishopMoves()
         {
             var moves = new List<Move>();
-            PieceColour bishopColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
+            PieceColour bishopColour = colourToMove;
             var squaresWithBishops = GetSquaresContainingPiece(PieceType.bishop, bishopColour);
 
             foreach(string square in squaresWithBishops)
@@ -411,7 +390,7 @@ namespace ChessEngine
         public List<Move> GenerateLegalRookMoves()
         {
             var moves = new List<Move>();
-            PieceColour rookColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
+            PieceColour rookColour = colourToMove;
             var squaresWithRooks = GetSquaresContainingPiece(PieceType.rook, rookColour);
 
             foreach (string square in squaresWithRooks)
@@ -432,7 +411,7 @@ namespace ChessEngine
         public List<Move> GenerateLegalQueenMoves()
         {
             var moves = new List<Move>();
-            PieceColour queenColour = isWhiteToMove ? PieceColour.white : PieceColour.black;
+            PieceColour queenColour = colourToMove;
             var squaresWithQueen = GetSquaresContainingPiece(PieceType.queen, queenColour);   
             
             foreach (var square in squaresWithQueen)
@@ -453,7 +432,7 @@ namespace ChessEngine
         public List<Move> FilterIllegalCheckMoves(List<Move> moves)
         {
             var filteredMoves = new List<Move>();
-            PieceColour colourToMove = isWhiteToMove ? PieceColour.white: PieceColour.black;
+            PieceColour colourToMove;
             foreach (var move in moves)
             {
                 this.MakeMove(move);
@@ -470,15 +449,13 @@ namespace ChessEngine
         {
             int startingRank = int.Parse(startingSquare.Substring(1, 1));
             int startingFile = Square.getFileAsInt(Char.Parse(startingSquare.Substring(0, 1)));
-
-            if ((startingRank + deltaY) <= 8 && (startingRank + deltaY) >= 1 && (startingFile + deltaX) <= 8 && (startingFile + deltaX) >= 1)
+            bool isOnFileWithinBoard = ((startingRank + deltaY) <= 8 && (startingRank + deltaY) >= 1); 
+            bool isOnRankWithinBoard = ((startingFile + deltaX) <= 8 && (startingFile + deltaX) >= 1);
+            if (isOnFileWithinBoard && isOnRankWithinBoard) 
             {
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
         public int[] GetMaximumDiagonalOffsets(string startingSquare, PieceColour colour)
         {

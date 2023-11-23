@@ -1,4 +1,5 @@
 ﻿using ChessEngine;
+using ChessEngine.Utilities;
 
 Board board = new Board();
 Run();
@@ -11,7 +12,7 @@ void Run() {
             bool isPlaying = true;
             while (isPlaying)
             {
-                board.PrintBoard();
+                DebugUtility.PrintBoard(board);
 
                 Move playerMove = new Move(Console.ReadLine(), board);
                 while (!Move.isLegal(board, playerMove))
@@ -27,9 +28,9 @@ void Run() {
             board.SetStartingPosition();
             Move m = new Move("e2e4", board);
             board.MakeMove(m);
-            board.PrintBoard();
+            DebugUtility.PrintBoard(board);
             board.undoMove(1);
-            board.PrintBoard();
+            DebugUtility.PrintBoard(board);
         break;
 
         case "quit":
