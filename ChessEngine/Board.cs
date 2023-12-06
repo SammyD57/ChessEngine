@@ -1,10 +1,10 @@
 ﻿using ChessEngine.Utilities;
-using System.Drawing;
 
 namespace ChessEngine
 {
     public class Board
     {
+        public List<Object[]> boardStateHistory { get; set; }
         public int plyCount { get; set; }
         public int fullMovesCount { get; set; }
         public int fiftyMoveRuleCount { get; set; }
@@ -14,7 +14,6 @@ namespace ChessEngine
         public int colourMultiplier { get; set; }
         public PieceColour colourToMove { get; set; }
         public List<Move> moveLog { get; set; }
-        public List<Board> boardStatesHistory { get; set; }
 
         public bool whiteHasKingsideCastleRight, whiteHasQueensideCastleRight, blackHasKingsideCastleRight, blackHasQueensideCastleRight;
 
@@ -40,8 +39,6 @@ namespace ChessEngine
             {'k', PieceType.king }
         };
 
-        public float[] pieceValues = { 1, 3, 3.25f, 5, 9 };
-
         public Dictionary<string, float> attackDefendMap = new Dictionary<string, float>();
           
         private readonly int[] diagonalXDeltas = { 1, 1, -1, -1 };
@@ -62,16 +59,15 @@ namespace ChessEngine
             fullMovesCount = 1;
             boardMap = new Dictionary<string, Piece>();
             moveLog = new List<Move>();
-            boardStatesHistory = new List<Board>();
-            colourMultiplier = 1;
+            colourMultiplier = 1; 
             colourToMove = PieceColour.white;
+            AddPositionToStateHistory();
+            boardStateHistory = new List<object[]>();
         }
 
         public void MakeMove(Move move)
         {
-            boardStatesHistory.Add(this);
             moveLog.Add(move);
-
 
             if (!move.isPromotionMove())
             {
@@ -100,23 +96,45 @@ namespace ChessEngine
             {
                 enPassantSquare = string.Empty;
             }
+            AddPositionToStateHistory();
         }
-        public void undoMove(int steps)
+        public void UndoMove(int steps)
         {
-            Board previousBoard = boardStatesHistory[boardStatesHistory.Count - steps];
-
-            this.boardMap = previousBoard.boardMap;
-            this.plyCount = previousBoard.plyCount;
-            this.fullMovesCount = previousBoard.fullMovesCount;
-            this.fiftyMoveRuleCount = previousBoard.fiftyMoveRuleCount;
-            this.enPassantSquare = previousBoard.enPassantSquare;
-            this.isWhiteToMove = previousBoard.isWhiteToMove;
-            this.moveLog = previousBoard.moveLog;
-            this.boardStatesHistory = previousBoard.boardStatesHistory;
-            this.whiteHasKingsideCastleRight = previousBoard.whiteHasKingsideCastleRight;
-            this.whiteHasQueensideCastleRight = previousBoard.whiteHasQueensideCastleRight;
-            this.blackHasKingsideCastleRight = previousBoard.blackHasKingsideCastleRight;
-            this.blackHasQueensideCastleRight = previousBoard.blackHasQueensideCastleRight;
+            int row = boardStateHistory.Count - steps - 1;
+            for(int i = 0; i < boardStateHistory[row].Length; i++)
+            {
+                this.plyCount = (int)boardStateHistory[row][0]; 
+                this.fullMovesCount = (int)boardStateHistory[row][1];
+                this.fiftyMoveRuleCount = (int)boardStateHistory[row][2];
+                this.boardMap = (Dictionary<string, Piece>)boardStateHistory[row][3];
+                this.enPassantSquare = (string)boardStateHistory[row][4];
+                this.isWhiteToMove = (bool)boardStateHistory[row][5];
+                this.colourMultiplier = (int)boardStateHistory[row][6];
+                this.colourToMove = (PieceColour)boardStateHistory[row][7];
+                this.moveLog = (List<Move>)boardStateHistory[row][8];
+                this.whiteHasKingsideCastleRight = (bool)boardStateHistory[row][9];
+                this.whiteHasQueensideCastleRight = (bool)boardStateHistory[row][10]; 
+                this.blackHasKingsideCastleRight = (bool)boardStateHistory[row][11]; 
+                this.blackHasQueensideCastleRight = (bool)boardStateHistory[row][12];    
+            }
+        }
+        public void AddPositionToStateHistory()
+        {
+            Object[] currentState = new Object[13];
+            currentState[0] = plyCount;
+            currentState[1] = fullMovesCount;
+            currentState[2] = fiftyMoveRuleCount;
+            currentState[3] = boardMap;
+            currentState[4] = enPassantSquare;
+            currentState[5] = isWhiteToMove;
+            currentState[6] = colourMultiplier;
+            currentState[7] = colourToMove;
+            currentState[8] = moveLog;
+            currentState[9] = whiteHasKingsideCastleRight;
+            currentState[10] = whiteHasQueensideCastleRight;
+            currentState[11] = blackHasKingsideCastleRight;
+            currentState[12] = blackHasQueensideCastleRight;
+            boardStateHistory.Add(currentState);
         }
       
         public void SetStartingPosition()
@@ -133,7 +151,7 @@ namespace ChessEngine
             {
                 if (move.pieceToMove.Type != PieceType.pawn)
                 {
-                    attackDefendMap[move.targetSquare] += pieceValues[(int) move.pieceToMove.Type] * colourMultiplier;
+                    attackDefendMap[move.targetSquare] += Piece.pieceValues[(int) move.pieceToMove.Type] * colourMultiplier;
                 }
             }
             foreach(string square in pawnAttackSquares)
@@ -428,11 +446,10 @@ namespace ChessEngine
             }
             return FilterIllegalCheckMoves(moves); 
         }
-
+        
         public List<Move> FilterIllegalCheckMoves(List<Move> moves)
         {
             var filteredMoves = new List<Move>();
-            PieceColour colourToMove;
             foreach (var move in moves)
             {
                 this.MakeMove(move);
@@ -440,11 +457,11 @@ namespace ChessEngine
                 {
                     filteredMoves.Add(move);
                 }
-                this.undoMove(1);
+                this.UndoMove(1);
             }
             return filteredMoves;
         }
-
+        
         public bool ChangeIsWithinBoard(int deltaX, int deltaY, string startingSquare)
         {
             int startingRank = int.Parse(startingSquare.Substring(1, 1));

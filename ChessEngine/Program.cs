@@ -26,11 +26,11 @@ void Run() {
 
         case "test":
             board.SetStartingPosition();
+            board.AddPositionToStateHistory();
             Move m = new Move("e2e4", board);
             board.MakeMove(m);
-            DebugUtility.PrintBoard(board);
-            board.undoMove(1);
-            DebugUtility.PrintBoard(board);
+            board.AddPositionToStateHistory();
+            
         break;
 
         case "quit":
