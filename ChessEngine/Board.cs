@@ -61,8 +61,8 @@ namespace ChessEngine
             moveLog = new List<Move>();
             colourMultiplier = 1; 
             colourToMove = PieceColour.white;
-            AddPositionToStateHistory();
             boardStateHistory = new List<object[]>();
+            AddPositionToStateHistory();
         }
 
         public void MakeMove(Move move)
@@ -140,24 +140,6 @@ namespace ChessEngine
         public void SetStartingPosition()
         {
             FenUtility.AddFen(this, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        }
-
-        public void UpdateAttackDefendMap()
-        {
-            var legalMoves = GenerateAllLegalMoves();
-            var pawnAttackSquares = GetPawnAttackSquares(false);
-
-            foreach(Move move in legalMoves)
-            {
-                if (move.pieceToMove.Type != PieceType.pawn)
-                {
-                    attackDefendMap[move.targetSquare] += Piece.pieceValues[(int) move.pieceToMove.Type] * colourMultiplier;
-                }
-            }
-            foreach(string square in pawnAttackSquares)
-            {
-                attackDefendMap[square] += colourMultiplier;
-            }
         }
 
         public List<string> GetSquaresContainingPiece(PieceType type, PieceColour colour)

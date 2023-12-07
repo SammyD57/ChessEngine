@@ -3,7 +3,8 @@ using ChessEngine.Utilities;
 
 Board board = new Board();
 Run();
-void Run() {
+void Run() 
+{
     var command = Console.ReadLine().Split(" ");
     switch (command[0].ToLower())
     {
@@ -27,11 +28,14 @@ void Run() {
         case "test":
             board.SetStartingPosition();
             board.AddPositionToStateHistory();
+            DebugUtility.PrintBoard(board);
             Move m = new Move("e2e4", board);
             board.MakeMove(m);
-            board.AddPositionToStateHistory();
-            
-        break;
+            DebugUtility.PrintBoard(board);
+            board.UndoMove(2);
+            DebugUtility.PrintBoard(board);
+
+            break;
 
         case "quit":
             Environment.Exit(0);
