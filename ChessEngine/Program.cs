@@ -32,9 +32,14 @@ void Run()
             Move m = new Move("e2e4", board);
             board.MakeMove(m);
             DebugUtility.PrintBoard(board);
-            board.UndoMove(2);
+            Console.WriteLine(board.isWhiteToMove);
+            Console.WriteLine(board.plyCount);
+            Console.WriteLine(board.colourToMove);
+            board.UndoMove(1);
             DebugUtility.PrintBoard(board);
-
+            Console.WriteLine(board.isWhiteToMove);
+            Console.WriteLine(board.plyCount);
+            Console.WriteLine(board.colourToMove);
             break;
 
         case "quit":

@@ -106,7 +106,7 @@ namespace ChessEngine
                 this.plyCount = (int)boardStateHistory[row][0]; 
                 this.fullMovesCount = (int)boardStateHistory[row][1];
                 this.fiftyMoveRuleCount = (int)boardStateHistory[row][2];
-                this.boardMap = (Dictionary<string, Piece>)boardStateHistory[row][3];
+                OverwriteBoardmap((Dictionary<string, Piece>)boardStateHistory[row][3]);
                 this.enPassantSquare = (string)boardStateHistory[row][4];
                 this.isWhiteToMove = (bool)boardStateHistory[row][5];
                 this.colourMultiplier = (int)boardStateHistory[row][6];
@@ -135,6 +135,13 @@ namespace ChessEngine
             currentState[11] = blackHasKingsideCastleRight;
             currentState[12] = blackHasQueensideCastleRight;
             boardStateHistory.Add(currentState);
+        }
+        public void OverwriteBoardmap(Dictionary<string, Piece> newBoardMap)
+        {
+            foreach (var kvp in boardMap)
+            {
+                boardMap[kvp.Key] = newBoardMap[kvp.Key];
+            }
         }
       
         public void SetStartingPosition()
